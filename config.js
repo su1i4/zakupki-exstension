@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:4000";
+const API_BASE = "https://extension-backend-08oa.onrender.com";
 
 export const API_ANALYZE = API_BASE + "/ai/analyze";
 export const API_ANALYZE_LIST = API_BASE + "/ai/analyze-list";
