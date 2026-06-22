@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+      :root {
+        --bg: #ffffff;
+        --bg-soft: #f7f7f8;
+        --text: #18181b;
+        --text-soft: #71717a;
+        --text-faint: #a1a1aa;
+        --line: #e4e4e7;
+        --line-soft: #f0f0f1;
+        --accent: #18181b;
+        --green: #15803d;
+        --green-bg: #f0fdf4;
+        --amber: #b45309;
+        --amber-bg: #fffbeb;
+        --red: #b91c1c;
+        --red-bg: #fef2f2;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        width: 100%;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          "Inter",
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .header {
+        position: relative;
+        padding: 18px 20px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .kicker {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-bottom: 3px;
+      }
+      .title {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+        margin-bottom: 14px;
+        padding-right: 44px;
+      }
+
+      /* колокольчик уведомлений */
+      .bell {
+        position: absolute;
+        top: 16px;
+        right: 18px;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--text-soft);
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+      }
+      .bell:hover {
+        background: var(--bg-soft);
+        color: var(--text);
+        border-color: var(--text-faint);
+      }
+      .bell.active {
+        color: var(--text);
+        border-color: var(--text);
+      }
+      .bell-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        background: var(--red);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        border-radius: 9px;
+        border: 2px solid var(--bg);
+      }
+      .bell-badge[hidden] {
+        display: none;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+      }
+      .tab {
+        flex: 1;
+        padding: 9px 12px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-soft);
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          color 0.12s,
+          border-color 0.12s;
+      }
+      .tab.active {
+        color: var(--text);
+        border-bottom-color: var(--text);
+      }
+      .tab:hover:not(.active) {
+        color: var(--text);
+      }
+
+      .body {
+        padding: 16px 20px 22px;
+      }
+      .pane {
+        display: none;
+      }
+      .pane.active {
+        display: block;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .btn:hover:not(:disabled) {
+        background: var(--bg-soft);
+        border-color: var(--text-faint);
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .btn.primary:hover:not(:disabled) {
+        background: #000;
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .btn-row {
+        display: flex;
+        gap: 6px;
+      }
+      .btn-row .btn {
+        margin-bottom: 8px;
+      }
+
+      .btn-mini {
+        padding: 5px 10px;
+        background: var(--bg);
+        color: var(--text-soft);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+      }
+      .btn-mini:hover {
+        background: var(--bg-soft);
+        color: var(--text);
+        border-color: var(--text-faint);
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--text-soft);
+        margin: 6px 0 14px;
+        min-height: 16px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .status.ok {
+        color: var(--green);
+      }
+      .status.err {
+        color: var(--red);
+      }
+      .spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--line);
+        border-top-color: var(--text-soft);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .collected {
+        display: none;
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+        font-size: 13px;
+      }
+      .collected.show {
+        display: block;
+      }
+      .collected .sec-label {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-bottom: 8px;
+      }
+      .collected .row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+      .collected .row .k {
+        color: var(--text-soft);
+        min-width: 80px;
+      }
+      .collected .row .v {
+        font-weight: 500;
+      }
+      .mini-lot {
+        font-size: 12px;
+        padding: 2px 0;
+        color: var(--text-soft);
+      }
+
+      .result {
+        display: none;
+      }
+      .result.show {
+        display: block;
+      }
+
+      .verdict {
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        border: 1px solid var(--line);
+      }
+      .verdict.go {
+        background: var(--green-bg);
+        border-color: #bbf7d0;
+      }
+      .verdict.care {
+        background: var(--amber-bg);
+        border-color: #fde68a;
+      }
+      .verdict.stop {
+        background: var(--red-bg);
+        border-color: #fecaca;
+      }
+      .verdict-label {
+        font-size: 11px;
+        color: var(--text-soft);
+        margin-bottom: 4px;
+      }
+      .verdict-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        letter-spacing: -0.2px;
+      }
+      .verdict.go .verdict-title {
+        color: var(--green);
+      }
+      .verdict.care .verdict-title {
+        color: var(--amber);
+      }
+      .verdict.stop .verdict-title {
+        color: var(--red);
+      }
+      .verdict-reason {
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .block-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-faint);
+        margin: 20px 0 10px;
+      }
+
+      .lot-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 13px 14px;
+        margin-bottom: 8px;
+      }
+      .lot-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .lot-name {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.25;
+      }
+      .lot-type {
+        font-size: 11px;
+        color: var(--text-soft);
+        padding: 2px 8px;
+        border-radius: 5px;
+        white-space: nowrap;
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+      }
+      .price-row {
+        display: flex;
+        gap: 24px;
+        margin: 10px 0;
+        padding: 10px 0;
+        border-top: 1px solid var(--line-soft);
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .price-item .pl {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-bottom: 3px;
+      }
+      .price-item .pv {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 9px;
+        border-radius: 5px;
+        border: 1px solid transparent;
+      }
+      .badge.high {
+        background: var(--red-bg);
+        color: var(--red);
+        border-color: #fecaca;
+      }
+      .badge.low {
+        background: var(--green-bg);
+        color: var(--green);
+        border-color: #bbf7d0;
+      }
+      .badge.ok {
+        background: var(--bg-soft);
+        color: var(--text-soft);
+        border-color: var(--line);
+      }
+      .lot-comment {
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-soft);
+        margin-top: 9px;
+      }
+
+      .risk-item {
+        display: flex;
+        gap: 9px;
+        font-size: 13px;
+        line-height: 1.5;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line-soft);
+      }
+      .risk-item:last-child {
+        border-bottom: none;
+      }
+      .risk-item .dot {
+        color: var(--text-faint);
+        flex-shrink: 0;
+      }
+      .profit {
+        background: var(--bg-soft);
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .sources {
+        margin-top: 14px;
+      }
+      .source-link {
+        display: block;
+        font-size: 12px;
+        color: var(--text-soft);
+        text-decoration: none;
+        padding: 4px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .source-link:hover {
+        color: var(--text);
+        text-decoration: underline;
+      }
+      .source-note {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-top: 8px;
+        line-height: 1.4;
+      }
+      .raw-fallback {
+        white-space: pre-wrap;
+        font-size: 13px;
+        line-height: 1.55;
+        background: var(--bg-soft);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+      }
+
+      .list-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .list-card.clickable {
+        cursor: pointer;
+        transition:
+          border-color 0.12s,
+          background 0.12s;
+        position: relative;
+      }
+      .list-card.clickable:hover {
+        border-color: var(--text-soft);
+        background: var(--bg-soft);
+      }
+      .list-card.clickable::after {
+        content: "↗";
+        position: absolute;
+        top: 12px;
+        right: 13px;
+        color: var(--text-faint);
+        font-size: 14px;
+      }
+      .list-card.clickable:hover::after {
+        color: var(--text);
+      }
+      .list-card.clickable .list-name {
+        padding-right: 18px;
+      }
+      .list-name {
+        font-weight: 600;
+        font-size: 13.5px;
+        line-height: 1.3;
+        margin-bottom: 4px;
+      }
+      .list-meta {
+        font-size: 12px;
+        color: var(--text-soft);
+        margin-bottom: 8px;
+      }
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 7px;
+      }
+      .tag {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 5px;
+        border: 1px solid transparent;
+      }
+      .tag.ok {
+        background: var(--green-bg);
+        color: var(--green);
+        border-color: #bbf7d0;
+      }
+      .tag.warn {
+        background: var(--amber-bg);
+        color: var(--amber);
+        border-color: #fde68a;
+      }
+      .tag.stop {
+        background: var(--red-bg);
+        color: var(--red);
+        border-color: #fecaca;
+      }
+      .tag.muted {
+        background: var(--bg-soft);
+        color: var(--text-soft);
+        border-color: var(--line);
+      }
+      .list-org {
+        font-size: 11px;
+        color: var(--text-faint);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .list-reason {
+        font-size: 12.5px;
+        color: var(--text-soft);
+        line-height: 1.4;
+        margin-bottom: 7px;
+      }
+
+      /* статистика */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .stat-card {
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+      }
+      .stat-card.wide {
+        grid-column: span 2;
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--text-faint);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .stat-value {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+      .stat-value.green {
+        color: var(--green);
+      }
+      .stat-value.amber {
+        color: var(--amber);
+      }
+      .stat-value.red {
+        color: var(--red);
+      }
+      .stat-sub {
+        font-size: 12px;
+        color: var(--text-soft);
+        margin-top: 2px;
+      }
+
+      .verdict-bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: var(--bg-soft);
+        margin-top: 6px;
+      }
+      .verdict-bar > div {
+        height: 100%;
+      }
+      .vb-go {
+        background: var(--green);
+      }
+      .vb-care {
+        background: var(--amber);
+      }
+      .vb-stop {
+        background: var(--red);
+      }
+
+      .org-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 12.5px;
+      }
+      .org-row:last-child {
+        border-bottom: none;
+      }
+      .org-row .o-name {
+        color: var(--text);
+        flex: 1;
+        padding-right: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .org-row .o-count {
+        color: var(--text-soft);
+        font-weight: 600;
+      }
+
+      .empty {
+        text-align: center;
+        color: var(--text-soft);
+        font-size: 13px;
+        padding: 30px 16px;
+        line-height: 1.5;
+      }
+
+      /* экран «Новые» */
+      .new-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .tender-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .tender-details {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <button
+        class="bell"
+        id="bell"
+        title="Новые закупки"
+        aria-label="Новые закупки"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="bell-badge" id="bellBadge" hidden>0</span>
+      </button>
+      <div class="kicker">zakupki.okmot.kg · AI-аудит</div>
+      <div class="title">Анализатор закупок</div>
+      <div class="tabs">
+        <button class="tab active" data-pane="page">Текущая страница</button>
+        <button class="tab" data-pane="tenders">Тендеры</button>
+        <button class="tab" data-pane="stats">Статистика</button>
+        <button class="tab" data-pane="sources">Источники</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- Вкладка: текущая страница -->
+      <div class="pane active" id="pane-page">
+        <button class="btn" id="collect">Собрать данные со страницы</button>
+        <button class="btn primary" id="analyze" disabled>
+          Анализ цен и рисков
+        </button>
+        <div class="status" id="status"></div>
+        <div class="collected" id="collected">
+          <div class="sec-label">Собрано со страницы</div>
+          <div id="collectedContent"></div>
+        </div>
+        <div class="result" id="result"></div>
+      </div>
+
+      <!-- Вкладка: статистика -->
+      <div class="pane" id="pane-stats">
+        <div class="status" id="statsStatus"></div>
+        <div id="statsContent"></div>
+      </div>
+      <!-- Вкладка: проанализированные тендеры -->
+      <div class="pane" id="pane-tenders">
+        <button class="btn primary" id="tendersScrapeBtn">
+          Найти и проанализировать новые
+        </button>
+        <div class="new-head">
+          <div class="block-label" style="margin: 0">
+            Проанализированные тендеры
+          </div>
+          <button class="btn-mini" id="tendersRefresh">Обновить</button>
+        </div>
+        <div class="status" id="tendersStatus"></div>
+        <div id="tendersContent"></div>
+      </div>
+
+      <!-- Экран: новые закупки (открывается колокольчиком) -->
+      <div class="pane" id="pane-new">
+        <div class="new-head">
+          <div class="block-label" style="margin: 0">Новые закупки</div>
+          <button class="btn-mini" id="newRefresh">Обновить</button>
+        </div>
+        <div class="status" id="newStatus"></div>
+        <div id="newContent"></div>
+      </div>
+      
+      <!-- Вкладка: источники цен -->
+      <div class="pane" id="pane-sources">
+        <div style="display: flex; gap: 6px; margin-bottom: 8px">
+          <input
+            id="srcUrl"
+            type="text"
+            placeholder="https://сайт-прайс.kg"
+            style="
+              flex: 1;
+              padding: 9px 12px;
+              font: inherit;
+              font-size: 13px;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              background: var(--bg);
+              color: var(--text);
+            "
+          />
+          <button class="btn-mini" id="srcUrlAdd" style="white-space: nowrap">
+            + ссылка
+          </button>
+        </div>
+        <input
+          id="srcFile"
+          type="file"
+          accept=".xlsx,.xls,.csv,.pdf,.doc,.docx"
+          style="display: none"
+        />
+        <button class="btn" id="srcFileBtn">
+          Загрузить Excel-прайс / брошюру
+        </button>
+        <div class="status" id="srcStatus"></div>
+        <div id="srcContent"></div>
+      </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Анализатор закупок",
+  "version": "3.1",
+  "description": "Боковая панель: AI-оценка списка закупок, анализ цен и рисков, статистика на zakupki.okmot.kg.",
+  "permissions": ["activeTab", "scripting", "sidePanel", "storage", "tabs"],
+  "host_permissions": [
+  "https://zakupki.okmot.kg/*",
+  "http://localhost:4000/*",
+  "https://extension-backend-08oa.onrender.com/*"
+],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Открыть панель анализатора" },
+  "side_panel": { "default_path": "sidepanel.html" }
+}
