@@ -318,7 +318,13 @@ function renderTenders(items) {
       : "";
     const sum = it.plannedSum ? esc(String(it.plannedSum)) : "—";
     const hasDetails =
-      it.cost != null || a.lots?.length || a.risks?.length || a.profitable;
+      it.cost != null ||
+      a.lots?.length ||
+      a.risks?.length ||
+      a.profitable ||
+      a.guarantee != null ||
+      a.winProbability != null ||
+      a.sources?.length;
     html += `
       <div class="list-card">
         <div class="list-name">${esc(it.name)}</div>
@@ -455,6 +461,14 @@ function ratingClass(r) {
   return "high"; // D/F/убыток — красный
 }
 
+// общая строка label/value (используется в нескольких блоках)
+function detailRow(label, value, style = "") {
+  return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px;">
+       <span style="color:var(--text-soft);">${label}</span>
+       <b style="${style}">${value}</b>
+     </div>`;
+}
+
 // блок юнит-экономики из колонок тендера (ТЗ Шаг 5)
 function buildEconomics(it) {
   if (it.cost == null) return ""; // себестоимость не оценена (услуга/работа без данных)
@@ -463,12 +477,6 @@ function buildEconomics(it) {
   const netColor =
     net === null ? "" : net >= 0 ? "color:var(--green);" : "color:var(--red);";
 
-  const row = (label, value, style = "") =>
-    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px;">
-       <span style="color:var(--text-soft);">${label}</span>
-       <b style="${style}">${value}</b>
-     </div>`;
-
   const ratingBadge = it.rating
     ? `<span class="badge ${ratingClass(it.rating)}">${esc(it.rating)}</span>`
     : "—";
@@ -476,12 +484,12 @@ function buildEconomics(it) {
   return (
     `<div class="block-label">Юнит-экономика</div>` +
     `<div style="margin-bottom:6px;">` +
-    row("Цена тендера", fmtSom(it.plannedSum)) +
-    row("Себестоимость", fmtSom(it.cost)) +
-    row("Валовая прибыль", fmtSom(it.grossProfit)) +
-    row("Чистая прибыль", fmtSom(it.profit), netColor + "font-weight:700;") +
-    row("Маржа", fmtPct(it.margin)) +
-    row("ROI", fmtPct(it.roi)) +
+    detailRow("Цена тендера", fmtSom(it.plannedSum)) +
+    detailRow("Себестоимость", fmtSom(it.cost)) +
+    detailRow("Валовая прибыль", fmtSom(it.grossProfit)) +
+    detailRow("Чистая прибыль", fmtSom(it.profit), netColor + "font-weight:700;") +
+    detailRow("Маржа", fmtPct(it.margin)) +
+    detailRow("ROI", fmtPct(it.roi)) +
     `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 2px;font-size:13px;">
        <span style="color:var(--text-soft);">Рейтинг</span>${ratingBadge}
      </div>` +
@@ -489,9 +497,77 @@ function buildEconomics(it) {
   );
 }
 
+// обеспечение + вероятность выигрыша (ТЗ Шаг 6 и Шаг 7)
+function buildOverview(a) {
+  const hasGuarantee = a.guarantee != null && a.guarantee !== "";
+  const hasWin = a.winProbability != null;
+  if (!hasGuarantee && !hasWin) return "";
+
+  let html = `<div class="block-label">Обеспечение и шансы</div><div style="margin-bottom:6px;">`;
+
+  if (hasGuarantee) {
+    html += detailRow("Гарантийное обеспечение", esc(String(a.guarantee)));
+  }
+
+  if (hasWin) {
+    const wp = toNum(a.winProbability);
+    const wpColor =
+      wp === null
+        ? ""
+        : wp >= 60
+          ? "color:var(--green);"
+          : wp >= 30
+            ? "color:var(--text-soft);"
+            : "color:var(--red);";
+    html += detailRow(
+      "Вероятность выигрыша",
+      wp === null ? "—" : wp + "%",
+      wpColor + "font-weight:700;",
+    );
+  }
+  html += `</div>`;
+
+  if (hasWin && a.winProbabilityNote) {
+    html += `<div class="list-reason">${esc(a.winProbabilityNote)}</div>`;
+  }
+  return html;
+}
+
+// разбивка себестоимости лота по компонентам (ТЗ Шаг 4)
+function buildCostBreakdown(lot) {
+  const cb = lot.costBreakdown;
+  if (!cb || typeof cb !== "object") return "";
+
+  const parts = [
+    ["Товар / прямые затраты", cb.goods],
+    ["Доставка", cb.delivery],
+    ["Налоги", cb.taxes],
+    ["Комиссии / гарантии", cb.fees],
+    ["Резерв", cb.reserve],
+  ].filter(([, v]) => toNum(v) !== null);
+
+  if (!parts.length && lot.cost == null) return "";
+
+  let html = `<div class="cost-breakdown" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line-soft);">`;
+  parts.forEach(([label, v]) => {
+    html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--text-soft);">
+        <span>${label}</span><span>${fmtSom(v)}</span>
+      </div>`;
+  });
+  if (lot.cost != null) {
+    html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0 2px;font-weight:700;">
+        <span>Себестоимость лота</span><span>${fmtSom(lot.cost)}</span>
+      </div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 function buildAnalysisDetails(it) {
   const a = parseAnalysis(it?.analysis);
   let html = buildEconomics(it);
+  html += buildOverview(a);
+
   if (Array.isArray(a.lots) && a.lots.length) {
     html += `<div class="block-label">Лоты и цены</div>`;
     a.lots.forEach((lot) => {
@@ -499,6 +575,14 @@ function buildAnalysisDetails(it) {
       let bc = "ok";
       if (pv.includes("завыш")) bc = "high";
       else if (pv.includes("заниж")) bc = "low";
+
+      const analogs =
+        Array.isArray(lot.analogs) && lot.analogs.length
+          ? `<div class="lot-analogs" style="margin-top:6px;font-size:12px;color:var(--text-soft);">
+               <span style="color:var(--text-faint);">Аналоги:</span> ${lot.analogs.map((x) => esc(String(x))).join(", ")}
+             </div>`
+          : "";
+
       html += `<div class="lot-card">
         <div class="lot-head"><div class="lot-name">${esc(lot.name)}</div><div class="lot-type">${esc(lot.type || "")}</div></div>
         <div class="price-row">
@@ -506,20 +590,48 @@ function buildAnalysisDetails(it) {
           <div class="price-item"><div class="pl">Рынок</div><div class="pv">${esc(lot.marketPrice || "—")}</div></div>
         </div>
         <span class="badge ${bc}">${esc(lot.priceVerdict || "нет данных")}</span>
+        ${analogs}
+        ${buildCostBreakdown(lot)}
+        ${lot.costNote ? `<div class="lot-comment" style="font-style:italic;">${esc(lot.costNote)}</div>` : ""}
         ${lot.comment ? `<div class="lot-comment">${esc(lot.comment)}</div>` : ""}
       </div>`;
     });
   }
+
   if (Array.isArray(a.risks) && a.risks.length) {
     html += `<div class="block-label">Риски</div>`;
     a.risks.forEach((r) => {
       html += `<div class="risk-item"><span class="dot">→</span><span>${esc(r)}</span></div>`;
     });
   }
+
   if (a.profitable)
     html += `<div class="block-label">Выгодность</div><div class="profit">${esc(a.profitable)}</div>`;
+
+  // источники веб-поиска Gemini (если бэк их приложил)
+  if (Array.isArray(a.sources) && a.sources.length) {
+    html += `<div class="block-label">Источники</div>`;
+    a.sources.forEach((s) => {
+      const uri = s && s.uri ? String(s.uri) : "";
+      if (!uri) return;
+      const title = s.title ? esc(String(s.title)) : esc(uri);
+      html += `<div class="source-item" style="font-size:12px;padding:3px 0;">
+          <a href="#" class="src-link" data-url="${esc(uri)}" style="color:var(--accent);text-decoration:none;">↗ ${title}</a>
+        </div>`;
+    });
+  }
+
   return html || `<div class="list-reason">Детали анализа отсутствуют.</div>`;
 }
+
+// делегирование клика по ссылкам-источникам (открываем во вкладке, а не внутри панели)
+tendersContentEl.addEventListener("click", (e) => {
+  const link = e.target.closest(".src-link");
+  if (!link) return;
+  e.preventDefault();
+  const url = link.getAttribute("data-url");
+  if (url) chrome.tabs.create({ url });
+});
 
 // --- кнопка: собрать активные → проанализировать новые ---
 tendersScrapeBtn.addEventListener("click", async () => {
