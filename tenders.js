@@ -1,5 +1,15 @@
-import { API_TENDERS_SAVE, API_SCRAPE_ACTIVE, API_SCRAPE_STATUS, CATEGORIES } from "./config.js";
-import { tendersStatusEl, tendersContentEl, tendersRefreshBtn, tendersScrapeBtn } from "./dom.js";
+import {
+  API_TENDERS_SAVE,
+  API_SCRAPE_ACTIVE,
+  API_SCRAPE_STATUS,
+  CATEGORIES,
+} from "./config.js";
+import {
+  tendersStatusEl,
+  tendersContentEl,
+  tendersRefreshBtn,
+  tendersScrapeBtn,
+} from "./dom.js";
 import { esc } from "./utils.js";
 import { updateBadge } from "./notifications.js";
 
@@ -25,18 +35,19 @@ let sortBy = "publishedAt";
 let sortOrder = "DESC";
 
 // --- фильтры ---
-let category = "";        // "" = все
-let verdict = "";         // "" = любой
-let rating = "";          // "" = любой
-let minSum = "";          // сумма от
-let minMargin = "";       // маржа % от
-let minProfit = "";       // прибыль от
+let category = ""; // "" = все
+let verdict = ""; // "" = любой
+let rating = ""; // "" = любой
+let minSum = ""; // сумма от
+let minMargin = ""; // маржа % от
+let minProfit = ""; // прибыль от
 let analyzedOnly = false; // только с оценкой
-let filtersOpen = false;  // раскрыта ли панель фильтров
+let filtersOpen = false; // раскрыта ли панель фильтров
 
 function setTendersStatus(text, type = "", spinner = false) {
   tendersStatusEl.className = "status" + (type ? " " + type : "");
-  tendersStatusEl.innerHTML = (spinner ? '<span class="spinner"></span>' : "") + text;
+  tendersStatusEl.innerHTML =
+    (spinner ? '<span class="spinner"></span>' : "") + text;
 }
 
 function verdictTagClass(verdict) {
@@ -49,13 +60,25 @@ function verdictTagClass(verdict) {
 // analysis может прийти объектом или строкой (jsonb / text)
 function parseAnalysis(a) {
   if (!a) return {};
-  if (typeof a === "string") { try { return JSON.parse(a); } catch { return {}; } }
+  if (typeof a === "string") {
+    try {
+      return JSON.parse(a);
+    } catch {
+      return {};
+    }
+  }
   return a;
 }
 
 // собрать URL списка с page/limit/sort/фильтрами
 function buildListUrl(base, page) {
-  const params = { page, limit: PAGE_SIZE, sortBy, sortOrder, activeOnly: "true" };
+  const params = {
+    page,
+    limit: PAGE_SIZE,
+    sortBy,
+    sortOrder,
+    activeOnly: "true",
+  };
   if (category) params.category = category;
   if (verdict) params.verdict = verdict;
   if (rating) params.rating = rating;
@@ -96,7 +119,8 @@ export async function loadTenders(page = 1) {
       tendersData = data.items || [];
       totalCount = data.total ?? tendersData.length;
       currentPage = data.page ?? page;
-      totalPages = data.totalPages ?? Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+      totalPages =
+        data.totalPages ?? Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
       if (data.sortBy) sortBy = data.sortBy;
       if (data.sortOrder) sortOrder = data.sortOrder;
     }
@@ -109,7 +133,7 @@ export async function loadTenders(page = 1) {
     renderTenders(tendersData);
     setTendersStatus(
       totalCount ? `Тендеров с анализом: ${totalCount}` : "",
-      totalCount ? "ok" : ""
+      totalCount ? "ok" : "",
     );
   } catch (e) {
     setTendersStatus("Ошибка: " + e.message + " — запущен ли Nest?", "err");
@@ -119,29 +143,51 @@ export async function loadTenders(page = 1) {
 // панель фильтров + сортировки
 function buildSortBar() {
   const sortOpts = SORT_OPTIONS.map(
-    ([v, l]) => `<option value="${v}" ${v === sortBy ? "selected" : ""}>${l}</option>`
+    ([v, l]) =>
+      `<option value="${v}" ${v === sortBy ? "selected" : ""}>${l}</option>`,
   ).join("");
 
   const catOpts = ['<option value="">Все категории</option>']
-    .concat(CATEGORIES.map(
-      (c) => `<option value="${c}" ${c === category ? "selected" : ""}>${esc(c)}</option>`
-    )).join("");
+    .concat(
+      CATEGORIES.map(
+        (c) =>
+          `<option value="${c}" ${c === category ? "selected" : ""}>${esc(c)}</option>`,
+      ),
+    )
+    .join("");
 
   const verdictOpts = [
     ["", "Любой вердикт"],
     ["Стоит участвовать", "Стоит участвовать"],
     ["С осторожностью", "С осторожностью"],
     ["Не рекомендуется", "Не рекомендуется"],
-  ].map(([v, l]) => `<option value="${esc(v)}" ${v === verdict ? "selected" : ""}>${esc(l)}</option>`).join("");
+  ]
+    .map(
+      ([v, l]) =>
+        `<option value="${esc(v)}" ${v === verdict ? "selected" : ""}>${esc(l)}</option>`,
+    )
+    .join("");
 
   const ratingOpts = ['<option value="">Любой рейтинг</option>']
-    .concat(["A+", "A", "B", "C", "D", "F"].map(
-      (r) => `<option value="${r}" ${r === rating ? "selected" : ""}>${r}</option>`
-    )).join("");
+    .concat(
+      ["A+", "A", "B", "C", "D", "F"].map(
+        (r) =>
+          `<option value="${r}" ${r === rating ? "selected" : ""}>${r}</option>`,
+      ),
+    )
+    .join("");
 
   const arrow = sortOrder === "DESC" ? "↓ убыв." : "↑ возр.";
-  const activeCount = [verdict, rating, minSum, minMargin, minProfit, analyzedOnly].filter(Boolean).length;
-  const inp = "padding:5px 8px;width:100%;box-sizing:border-box;font-size:12px;";
+  const activeCount = [
+    verdict,
+    rating,
+    minSum,
+    minMargin,
+    minProfit,
+    analyzedOnly,
+  ].filter(Boolean).length;
+  const inp =
+    "padding:5px 8px;width:100%;box-sizing:border-box;font-size:12px;";
 
   return `
     <div class="sort-bar" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
@@ -182,20 +228,45 @@ function bindSortBar() {
     if (el) el.addEventListener("change", fn);
   };
 
-  onChange("catFilter", (e) => { category = e.target.value; loadTenders(1); });
-  onChange("fVerdict", (e) => { verdict = e.target.value; loadTenders(1); });
-  onChange("fRating", (e) => { rating = e.target.value; loadTenders(1); });
-  onChange("fMinSum", (e) => { minSum = e.target.value.trim(); loadTenders(1); });
-  onChange("fMinProfit", (e) => { minProfit = e.target.value.trim(); loadTenders(1); });
-  onChange("fMinMargin", (e) => { minMargin = e.target.value.trim(); loadTenders(1); });
-  onChange("fAnalyzed", (e) => { analyzedOnly = e.target.checked; loadTenders(1); });
-  onChange("sortField", (e) => { sortBy = e.target.value; loadTenders(1); });
-
-  const dir = document.getElementById("sortDir");
-  if (dir) dir.addEventListener("click", () => {
-    sortOrder = sortOrder === "DESC" ? "ASC" : "DESC";
+  onChange("catFilter", (e) => {
+    category = e.target.value;
     loadTenders(1);
   });
+  onChange("fVerdict", (e) => {
+    verdict = e.target.value;
+    loadTenders(1);
+  });
+  onChange("fRating", (e) => {
+    rating = e.target.value;
+    loadTenders(1);
+  });
+  onChange("fMinSum", (e) => {
+    minSum = e.target.value.trim();
+    loadTenders(1);
+  });
+  onChange("fMinProfit", (e) => {
+    minProfit = e.target.value.trim();
+    loadTenders(1);
+  });
+  onChange("fMinMargin", (e) => {
+    minMargin = e.target.value.trim();
+    loadTenders(1);
+  });
+  onChange("fAnalyzed", (e) => {
+    analyzedOnly = e.target.checked;
+    loadTenders(1);
+  });
+  onChange("sortField", (e) => {
+    sortBy = e.target.value;
+    loadTenders(1);
+  });
+
+  const dir = document.getElementById("sortDir");
+  if (dir)
+    dir.addEventListener("click", () => {
+      sortOrder = sortOrder === "DESC" ? "ASC" : "DESC";
+      loadTenders(1);
+    });
 
   // тоггл панели фильтров — без перезагрузки данных
   const toggle = document.getElementById("filtToggle");
@@ -210,11 +281,17 @@ function bindSortBar() {
 
   // сброс всех фильтров
   const reset = document.getElementById("filtReset");
-  if (reset) reset.addEventListener("click", () => {
-    category = ""; verdict = ""; rating = "";
-    minSum = ""; minMargin = ""; minProfit = ""; analyzedOnly = false;
-    loadTenders(1);
-  });
+  if (reset)
+    reset.addEventListener("click", () => {
+      category = "";
+      verdict = "";
+      rating = "";
+      minSum = "";
+      minMargin = "";
+      minProfit = "";
+      analyzedOnly = false;
+      loadTenders(1);
+    });
 }
 
 function renderTenders(items) {
@@ -233,12 +310,15 @@ function renderTenders(items) {
 
   items.forEach((it, i) => {
     const a = parseAnalysis(it.analysis);
-    const vTag = a.verdict ? `<span class="tag ${verdictTagClass(a.verdict)}">${esc(a.verdict)}</span>` : "";
+    const vTag = a.verdict
+      ? `<span class="tag ${verdictTagClass(a.verdict)}">${esc(a.verdict)}</span>`
+      : "";
     const catTag = it.category
       ? `<span class="tag" style="background:var(--line-soft);color:var(--text-soft);">${esc(it.category)}</span>`
       : "";
     const sum = it.plannedSum ? esc(String(it.plannedSum)) : "—";
-    const hasDetails = (it.cost != null || a.lots?.length || a.risks?.length || a.profitable);
+    const hasDetails =
+      it.cost != null || a.lots?.length || a.risks?.length || a.profitable;
     html += `
       <div class="list-card">
         <div class="list-name">${esc(it.name)}</div>
@@ -274,7 +354,8 @@ function renderTenders(items) {
       const det = document.getElementById("tdet-" + idx);
       if (!det) return;
       if (det.hidden) {
-        if (!det.innerHTML) det.innerHTML = buildAnalysisDetails(tendersData[idx]);
+        if (!det.innerHTML)
+          det.innerHTML = buildAnalysisDetails(tendersData[idx]);
         det.hidden = false;
         b.textContent = "Скрыть";
       } else {
@@ -289,18 +370,27 @@ function renderTenders(items) {
   const nextBtn = tendersContentEl.querySelector(".pg-next");
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
-      if (currentPage > 1) { loadTenders(currentPage - 1); window.scrollTo({ top: 0 }); }
+      if (currentPage > 1) {
+        loadTenders(currentPage - 1);
+        window.scrollTo({ top: 0 });
+      }
     });
   }
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
-      if (currentPage < totalPages) { loadTenders(currentPage + 1); window.scrollTo({ top: 0 }); }
+      if (currentPage < totalPages) {
+        loadTenders(currentPage + 1);
+        window.scrollTo({ top: 0 });
+      }
     });
   }
   tendersContentEl.querySelectorAll(".pg-num").forEach((b) => {
     b.addEventListener("click", () => {
       const p = parseInt(b.getAttribute("data-page"), 10);
-      if (p && p !== currentPage) { loadTenders(p); window.scrollTo({ top: 0 }); }
+      if (p && p !== currentPage) {
+        loadTenders(p);
+        window.scrollTo({ top: 0 });
+      }
     });
   });
 }
@@ -406,7 +496,9 @@ function buildAnalysisDetails(it) {
     html += `<div class="block-label">Лоты и цены</div>`;
     a.lots.forEach((lot) => {
       const pv = (lot.priceVerdict || "").toLowerCase();
-      let bc = "ok"; if (pv.includes("завыш")) bc = "high"; else if (pv.includes("заниж")) bc = "low";
+      let bc = "ok";
+      if (pv.includes("завыш")) bc = "high";
+      else if (pv.includes("заниж")) bc = "low";
       html += `<div class="lot-card">
         <div class="lot-head"><div class="lot-name">${esc(lot.name)}</div><div class="lot-type">${esc(lot.type || "")}</div></div>
         <div class="price-row">
@@ -420,9 +512,12 @@ function buildAnalysisDetails(it) {
   }
   if (Array.isArray(a.risks) && a.risks.length) {
     html += `<div class="block-label">Риски</div>`;
-    a.risks.forEach((r) => { html += `<div class="risk-item"><span class="dot">→</span><span>${esc(r)}</span></div>`; });
+    a.risks.forEach((r) => {
+      html += `<div class="risk-item"><span class="dot">→</span><span>${esc(r)}</span></div>`;
+    });
   }
-  if (a.profitable) html += `<div class="block-label">Выгодность</div><div class="profit">${esc(a.profitable)}</div>`;
+  if (a.profitable)
+    html += `<div class="block-label">Выгодность</div><div class="profit">${esc(a.profitable)}</div>`;
   return html || `<div class="list-reason">Детали анализа отсутствуют.</div>`;
 }
 
@@ -435,7 +530,10 @@ tendersScrapeBtn.addEventListener("click", async () => {
     if (!res.ok) throw new Error("сервер " + res.status);
     pollScrape();
   } catch (e) {
-    setTendersStatus("Ошибка запуска: " + e.message + " — запущен ли Nest?", "err");
+    setTendersStatus(
+      "Ошибка запуска: " + e.message + " — запущен ли Nest?",
+      "err",
+    );
     tendersScrapeBtn.disabled = false;
   }
 });
@@ -449,9 +547,10 @@ function pollScrape() {
 
       if (s.running) {
         // пока collected=0 идёт сбор страниц, потом анализ — показываем фазу
-        const phase = s.collected > 0
-          ? `Анализирую… ${s.collected}`
-          : `Собираю страницы… ${s.pages || 0}`;
+        const phase =
+          s.collected > 0
+            ? `Анализирую… ${s.collected}`
+            : `Собираю страницы… ${s.pages || 0}`;
         setTendersStatus(phase, "", true);
         return;
       }
@@ -467,7 +566,13 @@ function pollScrape() {
       if (s.error) {
         setTendersStatus(
           `⚠ ${s.error}${s.collected ? ` · успело: ${s.collected}` : ""}`,
-          "err"
+          "err",
+        );
+      } else if (s.failed) {
+        setTendersStatus(
+          `Готово: новых ${s.collected}, не удалось ${s.failed}` +
+            (s.lastWarn ? ` · ${s.lastWarn}` : ""),
+          "warn",
         );
       } else {
         setTendersStatus(`Готово: новых ${s.collected}`, "ok");
